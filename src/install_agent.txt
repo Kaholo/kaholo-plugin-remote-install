@@ -1,0 +1,25 @@
+#/bin/bash
+
+if [$EUID -ne 0]
+then
+	echo 'Please run as sudo'
+	exit
+fi
+
+cd INSTALLATION_PATH
+
+echo 'Installing node js'
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+echo 'Finish installing nodejs'
+
+echo 'Installing agent dependencies'
+
+npm i
+npm i -g forever
+
+echo 'installed dependencies'
+echo 'Starting forever'
+
+forever start INSTALLATION_PATH/core/src/app.js --SERVER_URL={{SERVER_URL}}

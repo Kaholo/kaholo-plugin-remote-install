@@ -1,0 +1,39 @@
+{
+  "name": "InstallAgentOverSSH",
+  "type": "executer",
+  "exposeRoute": false,
+  "execProgram": "node",
+  "main": "app.js",
+  "version": "1.0.0",
+  "description": "Manages installation on a remote machine",
+  "methods": [
+    {
+      "name": "INSTALL",
+      "viewName": "Install agent over ssh",
+      "params": [
+        {
+          "name": "HOST",
+          "viewName": "host",
+          "type": "string"
+        },
+        {
+          "name": "USER",
+          "viewName": "user",
+          "type": "string"
+        },
+        {
+          "name": "PASS",
+          "viewName": "pass",
+          "type": "text"
+        },
+        {
+          "name": "KEY",
+          "viewName": "key",
+          "type": "text"
+        }
+      ],
+      "actionString": "USER@HOST -i KEY"
+    }
+  ],
+  "imgUrl": "logo.png"
+}
