@@ -4,7 +4,7 @@
   "exposeRoute": false,
   "execProgram": "node",
   "main": "app.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Manages installation on a remote machine",
   "methods": [
     {
@@ -30,6 +30,11 @@
           "name": "KEY",
           "viewName": "key",
           "type": "text"
+        },
+        {
+          "name": "PM_SERVER_URL",
+          "viewName": "PM server url",
+          "type": "string"
         }
       ],
       "actionString": "USER@HOST -i KEY"

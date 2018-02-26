@@ -22,7 +22,7 @@ function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-function installAgent(host, user, pass, key) {
+function installAgent(host, user, pass, key, serverUrl) {
     const config = {host, user, pass, key};
     const ssh = new SSH(config);
 
@@ -70,7 +70,7 @@ function installAgent(host, user, pass, key) {
     })).then(() => new Promise((resolve, reject) => {
         let installationScript = fs.readFileSync(path.join(__dirname, 'install_agent.txt')).toString();
         installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
-        installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), env.server_url);
+        installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
 
         console.log(installationScript);
         ssh
@@ -79,7 +79,7 @@ function installAgent(host, user, pass, key) {
                     console.log(stdout);
                 },
                 exit: function (code, stdout, stderr) {
-                    console.log("")
+                    console.log(code, stdout, stderr)
                 }
             })
             .exec(`unzip -o ${INSTALLATION_PATH}/installation_package.zip -d ${INSTALLATION_PATH}`, {
@@ -110,11 +110,10 @@ function installAgent(host, user, pass, key) {
                     console.log("script ", stdout);
                 },
                 exit: function (code, stdout, stderr) {
-                    console.log(code);
+                    console.log(code, stdout, stderr);
                     resolve();
                 }
             })
-            .exec(``)
             .start();
     })).then(() => new Promise((resolve, reject) => {
         fs.unlinkSync(keypath);
@@ -138,7 +137,7 @@ function main(argv) {
     // functions[action.method.name](action).then((res) => {
     //     console.log(res);
     //     process.exit(0); // Success
-    installAgent(action.params.HOST, action.params.USER, action.params.PASS, action.params.KEY).then((res) => {
+    installAgent(action.params.HOST, action.params.USER, action.params.PASS, action.params.KEY, action.params.PM_SERVER_URL).then((res) => {
         process.exit(0);
     }).catch(err => {
         console.log("an error occured", err);
