@@ -4,7 +4,7 @@
   "exposeRoute": false,
   "execProgram": "node",
   "main": "app.js",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Manages installation on a remote machine",
   "methods": [
     {
@@ -35,9 +35,14 @@
           "name": "PM_SERVER_URL",
           "viewName": "PM server url",
           "type": "string"
+        },
+        {
+          "name": "PM_AGENT_PORT",
+          "viewName": "PM agent url",
+          "type": "string"
         }
       ],
-      "actionString": "USER@HOST -i KEY"
+      "actionString": ""
     }
   ],
   "imgUrl": "logo.png"

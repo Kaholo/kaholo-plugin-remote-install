@@ -13,13 +13,12 @@ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 echo 'Finish installing nodejs'
-
 echo 'Installing agent dependencies'
 
-npm i
-npm i -g forever
+sudo npm i
+sudo npm i -g pm2
 
 echo 'installed dependencies'
-echo 'Starting forever'
+echo 'Starting agent process'
 
-forever start INSTALLATION_PATH/core/src/app.js --SERVER_URL={{SERVER_URL}}
+sudo pm2 start INSTALLATION_PATH/core/src/app.js --name agent -- --SERVER_URL={{SERVER_URL}} {{PORT}}

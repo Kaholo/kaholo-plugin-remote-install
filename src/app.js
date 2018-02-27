@@ -22,8 +22,8 @@ function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-function installAgent(host, user, pass, key, serverUrl) {
-    const config = {host, user, pass, key};
+function installAgent(host, user, pass, key, serverUrl, agentPort) {
+    const config = { host, user, pass, key };
     const ssh = new SSH(config);
 
 
@@ -33,6 +33,18 @@ function installAgent(host, user, pass, key, serverUrl) {
         fs.writeFileSync(keypath, key);
         child_process.execSync(`chmod 600 ${keypath}`); // changing permission to pem file
     }
+
+    let connectionSSHString = 'ssh -o StrictHostKeyChecking=no';
+    if (key) {
+        connectionSSHString += ` -i ${keypath}`
+    }
+    if (pass) {
+        connectionSSHString += ` ${user}:${pass}`
+    } else {
+        connectionSSHString += ` ${user}`
+    }
+    connectionSSHString += `@${host}`;
+    child_process.execSync(connectionSSHString);
 
     return new Promise((resolve, reject) => {
         ssh.exec(`mkdir -p ${INSTALLATION_PATH}`, {
@@ -61,7 +73,7 @@ function installAgent(host, user, pass, key, serverUrl) {
         console.log(scpActionString);
         child_process.exec(scpActionString, (error, stdout, stderr) => {
             if (error) {
-                console.log("an error occured");
+                console.log('an error occured');
                 return reject();
             }
             console.log(error, stdout, stderr);
@@ -71,10 +83,11 @@ function installAgent(host, user, pass, key, serverUrl) {
         let installationScript = fs.readFileSync(path.join(__dirname, 'install_agent.txt')).toString();
         installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
         installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
+        installationScript = installationScript.replace(new RegExp('{{PORT}}', 'g'), agentPort? `--PORT=${agentPort}` : '');
 
         console.log(installationScript);
         ssh
-            .exec('sudo apt-get unzip', {
+            .exec('sudo apt-get install unzip -y', {
                 out: function (stdout) {
                     console.log(stdout);
                 },
@@ -87,14 +100,13 @@ function installAgent(host, user, pass, key, serverUrl) {
                     console.log(stdout);
                 },
                 exit: function (code, stdout, stderr) {
-                    console.log("")
+                    console.log('')
                 }
             })
             .exec(`cd ${INSTALLATION_PATH}`)
             .exec(`echo '${installationScript}' > ${INSTALLATION_PATH}/install.sh`, {
                 exit: function (code, stdout, stderr) {
                     console.log(code, stdout, stderr);
-                    console.log("Wrote script");
                 }
             })
             .exec(`chmod 777  ${INSTALLATION_PATH}/install.sh`, {
@@ -102,12 +114,13 @@ function installAgent(host, user, pass, key, serverUrl) {
                     console.log('chmod ', stdout);
                 },
                 exit: function (code, stdout, stderr) {
+                    if (stderr) { return reject(stderr) }
                     console.log(code, stdout, stderr);
                 }
             })
             .exec(`sudo ${INSTALLATION_PATH}/install.sh`, {
                 out: function (stdout) {
-                    console.log("script ", stdout);
+                    console.log('script ', stdout);
                 },
                 exit: function (code, stdout, stderr) {
                     console.log(code, stdout, stderr);
@@ -126,7 +139,7 @@ function installAgent(host, user, pass, key, serverUrl) {
 function main(argv) {
 
     if (argv.length < 3) {
-        console.log("Not enough parameters");
+        console.log('Not enough parameters');
         // Invalid Argument
         // Either an unknown option was specified, or an option requiring a value was provided without a value.
         process.exit(9);
@@ -134,13 +147,16 @@ function main(argv) {
 
     const action = JSON.parse(argv[2]);
 
-    // functions[action.method.name](action).then((res) => {
-    //     console.log(res);
-    //     process.exit(0); // Success
-    installAgent(action.params.HOST, action.params.USER, action.params.PASS, action.params.KEY, action.params.PM_SERVER_URL).then((res) => {
+    installAgent(
+        action.params.HOST,
+        action.params.USER,
+        action.params.PASS,
+        action.params.KEY,
+        action.params.PM_SERVER_URL,
+        action.params.PM_AGENT_PORT).then((res) => {
         process.exit(0);
     }).catch(err => {
-        console.log("an error occured", err);
+        console.log('An error occurred', err);
         // Uncaught Fatal Exception
         // There was an uncaught exception, and it was not handled by a domain or an 'uncaughtException' event handler.
         process.exit(1); // Failure
