@@ -1,7 +1,7 @@
 {
   "name": "pm-plugin-remote-installation",
-  "version": "1.0.0",
-  "description": "Manages installation on a remote machine",
+  "version": "1.0.1",
+  "description": "Installs agent on a remote machine",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,6 +9,5 @@
   "author": "Productionmap team (Roy Talyosef)",
   "license": "ISC",
   "dependencies": {
-    "simple-ssh": "^1.0.0"
   }
 }
