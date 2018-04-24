@@ -21,4 +21,4 @@ sudo npm i -g pm2
 echo 'installed dependencies'
 echo 'Starting agent process'
 
-sudo pm2 start INSTALLATION_PATH/core/src/app.js --name agent -- --SERVER_URL={{SERVER_URL}} {{PORT}}
+sudo pm2 start INSTALLATION_PATH/core/src/app.js --name agent -- --SERVER_URL={{SERVER_URL}} {{PORT}} {{AGENT_NAME}} {{ATTRIBUTES}}

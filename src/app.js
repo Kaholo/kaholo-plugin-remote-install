@@ -21,7 +21,7 @@ function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-function installAgent(host, user, pass, key, serverUrl, agentPort) {
+function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, attributes) {
     const tmp_key_file_name = guid() + '.txt';
     let keypath = path.join(__dirname, tmp_key_file_name);
     if (key) {
@@ -69,6 +69,14 @@ function installAgent(host, user, pass, key, serverUrl, agentPort) {
                 installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
                 installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
                 installationScript = installationScript.replace(new RegExp('{{PORT}}', 'g'), (agentPort || '8090'));
+                installationScript = installationScript.replace(new RegExp('{{AGENT_NAME}}', 'g'), (agentPort || ''));
+                let attrs = '';
+                attributes.forEach((attr) => {
+                    attrs += `--TAG=${attr} `;
+                });
+
+                installationScript = installationScript.replace(new RegExp('{{ATTRIBUTES}}', 'g'), attrs);
+
 
                 // unzipping, creating script file on remote and running it
                 child_process.execSync(`${connectionSSHString} "unzip -o ${INSTALLATION_PATH}/installation_package.zip -d ${INSTALLATION_PATH}; echo '${installationScript}' > ${INSTALLATION_PATH}/install.sh; chmod 777 ${INSTALLATION_PATH}/install.sh; sudo ${INSTALLATION_PATH}/install.sh"`);
@@ -100,7 +108,9 @@ function main(argv) {
         action.params.PASS,
         action.params.KEY,
         action.params.PM_SERVER_URL,
-        action.params.PM_AGENT_PORT
+        action.params.PM_AGENT_PORT,
+        action.params.AGENT_NAME,
+        (action.params.AGENT_ATTRIBUTES || '').split(",")
     )
         .then((res) => {
             console.log('Finish');

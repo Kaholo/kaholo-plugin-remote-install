@@ -40,6 +40,16 @@
           "name": "PM_AGENT_PORT",
           "viewName": "PM agent url",
           "type": "string"
+        },
+        {
+          "name": "AGENT_NAME",
+          "viewName": "agent name",
+          "type": "string"
+        },
+        {
+          "name": "AGENT_ATTRIBUTES",
+          "viewName": "agent attributes",
+          "type": "string"
         }
       ],
       "actionString": ""
