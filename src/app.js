@@ -2,6 +2,7 @@ const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+const request = require('request');
 const env = require('../../../core/src/environment/environment');
 
 const SERVER_URL = env.server_url;
@@ -65,24 +66,44 @@ function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, at
         });
     })
         .then(() => new Promise((resolve, reject) => {
-                let installationScript = fs.readFileSync(path.join(__dirname, 'install_agent.txt')).toString();
-                installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
-                installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
-                installationScript = installationScript.replace(new RegExp('{{PORT}}', 'g'), (agentPort || '8090'));
-                installationScript = installationScript.replace(new RegExp('{{AGENT_NAME}}', 'g'), (agentPort || ''));
-                let attrs = '';
-                attributes.forEach((attr) => {
+            let installationScript = fs.readFileSync(path.join(__dirname, 'install_agent.txt')).toString();
+            installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
+            installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
+            installationScript = installationScript.replace(new RegExp('{{PORT}}', 'g'), (agentPort || '8090'));
+            installationScript = installationScript.replace(new RegExp('{{AGENT_NAME}}', 'g'), agentName ? `--NAME=${agentName}` : '');
+            let attrs = '';
+
+            attributes.forEach((attr) => {
+                if (attr) {
                     attrs += `--TAG=${attr} `;
+                }
+            });
+
+            installationScript = installationScript.replace(new RegExp('{{ATTRIBUTES}}', 'g'), attrs);
+
+
+            // unzipping, creating script file on remote and running it
+            child_process.execSync(`${connectionSSHString} "unzip -o ${INSTALLATION_PATH}/installation_package.zip -d ${INSTALLATION_PATH}; echo '${installationScript}' > ${INSTALLATION_PATH}/install.sh; chmod 777 ${INSTALLATION_PATH}/install.sh; sudo ${INSTALLATION_PATH}/install.sh"`);
+            resolve();
+        }))
+        .then(() => new Promise((resolve, reject) => {
+            if (!agentName) { return resolve() }
+
+            let interval = setInterval(() => {
+                request.get(env.server_url + '/api/agents/status', (error, responseCode, body) => {
+                    // console.log(body);
+                    if (typeof(body) === 'object') {
+                        Object.keys(body).forEach((key) => {
+                            if (body[key].hasOwnProperty('name') && body[key].name === agentName) {
+                                clearInterval(interval);
+                                return resolve(body);
+                            }
+                        })
+                    }
+
                 });
-
-                installationScript = installationScript.replace(new RegExp('{{ATTRIBUTES}}', 'g'), attrs);
-
-
-                // unzipping, creating script file on remote and running it
-                child_process.execSync(`${connectionSSHString} "unzip -o ${INSTALLATION_PATH}/installation_package.zip -d ${INSTALLATION_PATH}; echo '${installationScript}' > ${INSTALLATION_PATH}/install.sh; chmod 777 ${INSTALLATION_PATH}/install.sh; sudo ${INSTALLATION_PATH}/install.sh"`);
-                resolve();
-            })
-        )
+            }, 10000);
+        }))
         .then(() => new Promise((resolve, reject) => {
             fs.unlinkSync(keypath);
             resolve();
@@ -110,7 +131,7 @@ function main(argv) {
         action.params.PM_SERVER_URL,
         action.params.PM_AGENT_PORT,
         action.params.AGENT_NAME,
-        (action.params.AGENT_ATTRIBUTES || '').split(",")
+        (action.params.AGENT_ATTRIBUTES || '').split(',')
     )
         .then((res) => {
             console.log('Finish');

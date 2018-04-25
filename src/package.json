@@ -1,6 +1,6 @@
 {
   "name": "pm-plugin-remote-installation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Installs agent on a remote machine",
   "main": "app.js",
   "scripts": {
@@ -9,5 +9,6 @@
   "author": "Productionmap team (Roy Talyosef)",
   "license": "ISC",
   "dependencies": {
+    "request": "^2.85.0"
   }
 }

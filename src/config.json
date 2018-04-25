@@ -4,7 +4,7 @@
   "exposeRoute": false,
   "execProgram": "node",
   "main": "app.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Manages installation on a remote machine",
   "methods": [
     {
