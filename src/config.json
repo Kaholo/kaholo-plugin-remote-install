@@ -4,11 +4,11 @@
   "exposeRoute": false,
   "execProgram": "node",
   "main": "app.js",
-  "version": "1.0.2",
+  "version": "1.2.0",
   "description": "Manages installation on a remote machine",
   "methods": [
     {
-      "name": "INSTALL",
+      "name": "installAgent",
       "viewName": "Install agent over ssh",
       "params": [
         {

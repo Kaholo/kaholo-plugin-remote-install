@@ -22,7 +22,17 @@ function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, attributes) {
+function installAgent(action) {
+
+    let host = action.params.HOST, ;
+    let user = action.params.USER, ;
+    let pass = action.params.PASS, ;
+    let key = action.params.KEY, ;
+    let serverUrl = action.params.PM_SERVER_URL, ;
+    let agentPort = action.params.PM_AGENT_PORT, ;
+    let agentName = action.params.AGENT_NAME, ;
+    let attributes = (action.params.AGENT_ATTRIBUTES || '').split(',');
+
     const tmp_key_file_name = guid() + '.txt';
     let keypath = path.join(__dirname, tmp_key_file_name);
     if (key) {
@@ -34,24 +44,21 @@ function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, at
     if (key) {
         connectionSSHString += ` -i ${keypath}`
     }
-    if (pass) {
-        connectionSSHString += ` ${user}:${pass}`
-    } else {
-        connectionSSHString += ` ${user}`
-    }
+
+    connectionSSHString += pass ? ` ${user}:${pass}` : ` ${user}`;
     connectionSSHString += `@${host}`;
+    
     // creating the directory and installing unzip
-    child_process.execSync(`${connectionSSHString} "mkdir -p ${INSTALLATION_PATH }; sudo apt install unzip -y;"`);
+    child_process.execSync(`${connectionSSHString} "mkdir -p ${INSTALLATION_PATH}; sudo apt install unzip -y;"`);
     let scpActionString = 'scp';
+    
     if (key) {
         scpActionString += ` -i ${keypath}`
     }
+
     scpActionString += ' ' + INSTALLATION_PACKAGE_DIST;
-    if (pass) {
-        scpActionString += ` ${user}:${pass}`
-    } else {
-        scpActionString += ` ${user}`
-    }
+    scpActionString += pass ? ` ${user}:${pass}` : ` ${user}`;
+    
     scpActionString += `@${host}:${INSTALLATION_PATH}`;
     return new Promise((resolve, reject) => {
 
@@ -64,8 +71,7 @@ function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, at
             console.log(error, stdout, stderr);
             resolve();
         });
-    })
-        .then(() => new Promise((resolve, reject) => {
+    }).then(() => new Promise((resolve, reject) => {
             let installationScript = fs.readFileSync(path.join(__dirname, 'install_agent.txt')).toString();
             installationScript = installationScript.replace(new RegExp('INSTALLATION_PATH', 'g'), INSTALLATION_PATH);
             installationScript = installationScript.replace(new RegExp('{{SERVER_URL}}', 'g'), (serverUrl || env.server_url));
@@ -85,14 +91,13 @@ function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, at
             // unzipping, creating script file on remote and running it
             child_process.execSync(`${connectionSSHString} "unzip -o ${INSTALLATION_PATH}/installation_package.zip -d ${INSTALLATION_PATH}; echo '${installationScript}' > ${INSTALLATION_PATH}/install.sh; chmod 777 ${INSTALLATION_PATH}/install.sh; sudo ${INSTALLATION_PATH}/install.sh"`);
             resolve();
-        }))
-        .then(() => new Promise((resolve, reject) => {
+        })).then(() => new Promise((resolve, reject) => {
             if (!agentName) { return resolve() }
 
             let interval = setInterval(() => {
                 request.get(env.server_url + '/api/agents/status', (error, responseCode, body) => {
                     // console.log(body);
-                    if (typeof(body) === 'object') {
+                    if (typeof (body) === 'object') {
                         Object.keys(body).forEach((key) => {
                             if (body[key].hasOwnProperty('name') && body[key].name === agentName) {
                                 clearInterval(interval);
@@ -108,42 +113,8 @@ function installAgent(host, user, pass, key, serverUrl, agentPort, agentName, at
             fs.unlinkSync(keypath);
             resolve();
         }));
-
-
 }
 
-function main(argv) {
-
-    if (argv.length < 3) {
-        console.log('Not enough parameters');
-        // Invalid Argument
-        // Either an unknown option was specified, or an option requiring a value was provided without a value.
-        process.exit(9);
-    }
-
-    const action = JSON.parse(argv[2]);
-
-    installAgent(
-        action.params.HOST,
-        action.params.USER,
-        action.params.PASS,
-        action.params.KEY,
-        action.params.PM_SERVER_URL,
-        action.params.PM_AGENT_PORT,
-        action.params.AGENT_NAME,
-        (action.params.AGENT_ATTRIBUTES || '').split(',')
-    )
-        .then((res) => {
-            console.log('Finish');
-            console.log(res);
-            process.exit(0);
-        })
-        .catch(err => {
-            console.log('An error occurred', err);
-            // Uncaught Fatal Exception
-            // There was an uncaught exception, and it was not handled by a domain or an 'uncaughtException' event handler.
-            process.exit(1); // Failure
-        });
+module.exports = {
+    installAgent: installAgent
 }
-
-main(process.argv);
